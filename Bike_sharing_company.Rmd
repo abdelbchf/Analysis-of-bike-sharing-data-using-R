@@ -1,0 +1,297 @@
+---
+title: "LYFT Data renting bikes "
+author: "Mr Abdelaziz BOUCHNIF"
+output: rmarkdown::html_vignette
+fig_width: 6 
+fig_height: 4
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction:
+
+This document is an analysis report done to find insights from large data of bike-sharing company operating in Chicago. The data set includes much information about bikes' type, station positions, membership type, and dates
+
+The aim of the study is to scale users from casual users to full membership users of the rented bikes through a deep understanding of user preferences and limitations for each type of membership.
+
+The analysis could go deeper if specific data about users were available like (gender, age, home address, job...etc)
+
+therefore, the current data set was large enough to map the market of renting bikes in the city of Chicago and allow very precise insights to draw an interesting conclusion to draw a new customer acquisition strategy.
+
+## Data preparation:
+
+install & load package
+
+```{r include = FALSE,results="hide"}
+
+install.packages("tidyverse")
+install.packages("readr")
+install.packages("ggplot2")
+install.packages("here")
+install.packages("janitor")
+install.packages("skimr")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("ggmap")
+install.packages("lubridate")
+install.packages("rmarkdown")
+install.packages("bookdown")
+
+library("tidyr")
+library("lubridate")
+library("tidyverse")
+library("ggplot2")
+library("here")
+library("janitor")
+library("skimr")
+library("dplyr")
+library("readr")
+library("ggmap")
+library("rmarkdown")
+library("rmarkdown")
+library("bookdown")
+
+```
+
+Upload csv files and consolidate them:
+
+```{r}
+list_of_files <- list.files(path = "Data",
+     recursive = TRUE,
+     pattern = "\\.csv$",
+     full.names = TRUE)
+df <- readr::read_csv(list_of_files)
+```
+
+Check data
+
+```{r results="hide"}
+summarize(df)
+str(df)
+glimpse(df)
+```
+
+check the volume of NA values
+
+```{r}
+sum(is.na(df))
+```
+
+Sort, filter and clean data
+
+```{r}
+diiiv <-df %>% 
+select(ride_id,rideable_type,started_at,start_station_name,start_station_id,end_station_name,end_station_id,member_casual,started_at,ended_at,start_lat,start_lng,end_lat,end_lng)%>% 
+  arrange(started_at)
+```
+
+Delete NA Data rows
+
+```{r}
+dff<-drop_na(diiiv)
+```
+
+calculate trip duration and days of traffic
+
+```{r}
+divydata<-dff %>% 
+  mutate(tripduration=ended_at-started_at) %>% 
+  mutate(day_of_week=weekdays(as.Date(dff$started_at)))
+
+```
+
+extract dates only
+
+```{r}
+divydata$started_at<-as_date(divydata$started_at)
+```
+
+check data structure
+
+```{r results="hide"}
+str(divydata)
+```
+
+Convert (difftime) for (tripduration) variable.
+
+```{r}
+divydata$tripduration <- as.numeric(divydata$tripduration)
+
+divydata$tripduration <-divydata$tripduration/60
+```
+
+check the class
+
+```{r}
+class(divydata$tripduration)
+```
+
+Total trip duration of the last year:
+
+```{r}
+divydata %>%
+  filter(started_at >= as.Date("2021-01-01") & started_at <= as.Date("2022-12-31")) %>%
+  summarise(sum_tripduration = sum(tripduration)) %>%
+  mutate(sum_tripduration_hms = seconds_to_period(sum_tripduration))
+  
+```
+
+## Analysis:
+
+The goal of analysis is to answer the following questions:
+
+We will answer these questions first as part of the analysis:
+
+How much time is spent on each bike type per membership type?
+
+Is there any preference for a particular period of the year? is there any correlation to membership type?
+
+Are membership types related to location?
+
+```{r}
+divydata<-divydata %>% 
+  filter(tripduration>0)
+```
+
+Let plot the evolution of each type of bike users during 9 years
+
+```{r out.width='100%'}
+ggplot(data=divydata)+geom_line(mapping=aes(x=started_at,y=tripduration,color= member_casual)) + labs(x = "period of time", y = "Duration", title = "trip duration per membership type/ periode")
+```
+
+Trip duration per membership type and per day of week
+
+```{r,out.width='100%'}
+ggplot(data=divydata)+geom_col(mapping=aes(x=day_of_week,y=tripduration,color= member_casual)) + labs(x = "day of week", y = "Duration", title = "trip duration per membership type/ day of week")
+```
+
+Users with membership cards are using bikes at regular rates for the week. Otherwise, the casual users are using bikes at a higher level during the weekend and at a higher rate than the users with a membership.
+
+The next question is about bike type
+
+```{r,out.width='100%'}
+ggplot(data=divydata)+geom_col(mapping=aes(x=rideable_type,y=tripduration,color= member_casual)) + labs(x = "type of bike", y = "Duration", title = "trip duration per membership type/ type of bike")
+```
+
+This is an exciting plot, as we could see casual members have a significant preference for docked bikes, meanwhile, the users with membership cards have a preference for classic bikes which get an attractive use rate for casual users.
+
+Another side of the analysis is where each type of bike is used during the week.
+
+```{r,out.width='100%'}
+ggplot(data=divydata)+geom_col(mapping=aes(x=day_of_week,y=tripduration,color= rideable_type,)) +facet_wrap(~member_casual)+ facet_wrap(~member_casual)+theme(axis.text.x = element_text(angle = 45)) + labs(x = "day of the week", y = "Duration", title = "trip duration during the week / type of bike")
+```
+
+For this plot, the users have a preference for the classic and docked bikes, especially during the weekend, concerning the electric bike it seems that are used at a very low rate during the week.
+
+The sum, the main products of **lyft** company are classic bikes and docked bikes which are in high demand during the weekend, especially by the casual users who are spending the most time on lyft' bikes.
+
+The product/ user matching is more similar to the following:
+
+Docked bikes for casual users ( high demand during the weekend)
+
+Classic bikes for membership users (regular demand during the week)
+
+Electric bikes for both of them with low time spent (mostly regular demand during the week)
+
+The next step is making a Geo analysis to understand where the users are and where each type of bike is used. are there any geographic preferences?
+
+Set *Google Maps API*
+
+```{r echo=FALSE,results="hide"}
+api <-"***************************"
+
+register_google(key = api)
+```
+
+Lets load the map of Chicago and arrival stations by user type and bike type=docked bike
+
+```{r,out.width='100%'}
+
+# Get the map of Chicago
+map_loc <- get_map(location = "Chicago", zoom =13) 
+
+# Create a ggplot object with the map as the background 
+p <- ggmap(map_loc) 
+
+# Add the start station locations to the map, using different colors for member_casual
+p <- p + geom_point(data = divydata %>% 
+                       filter(started_at >= as.Date("2021-01-01") & started_at <= as.Date("2022-11-30") & rideable_type == "docked_bike"), 
+                    aes(x = start_lng, y = start_lat, color = member_casual))
+
+# Show the plot
+p
+
+```
+
+Lets load the map of Chicago and arrival stations by user type and bike type=classic bike:
+
+```{r,out.width='100%'}
+
+# Get the map of Chicago
+map_loc <- get_map(location = "Chicago", zoom =13) 
+
+# Create a ggplot object with the map as the background 
+p <- ggmap(map_loc) 
+
+# Add the start station locations to the map, using different colors for member_casual
+p <- p + geom_point(data = divydata %>% 
+                       filter(started_at >= as.Date("2021-01-01") & started_at <= as.Date("2022-11-30") & rideable_type == "classic_bike"), 
+                    aes(x = start_lng, y = start_lat, color = member_casual))
+
+# Show the plot
+p
+```
+
+Lets load the map of Chicago and arrival stations by user and bike type=electric bike.
+
+```{r,out.width='100%'}
+
+# Get the map of Chicago
+map_loc <- get_map(location = "Chicago", zoom =13) 
+
+# Create a ggplot object with the map as the background 
+p <- ggmap(map_loc) 
+
+# Add the start station locations to the map, using different colors for member_casual
+p <- p + geom_point(data = divydata %>% 
+                       filter(started_at >= as.Date("2021-01-01") & started_at <= as.Date("2022-11-30") & rideable_type == "electric_bike"), 
+                    aes(x = start_lng, y = start_lat, color = member_casual))
+
+# Show the plot
+p
+```
+
+## Results:
+
+As the maps show, there is a huge difference between the trip duration and the frequency of use.
+
+Electric bikes have a high frequency of use for both types of users with many start stations but with a very short trip duration for battery discharge reasons, in the opposite both docked bikes and classic bikes have and homogeneous distribution of pickup stations but huge differences in time of use for each type of user and frequency of use:
+
+-   Docked bikes for casual users ( high demand during the weekend)
+
+-   Classic bikes for membership users (regular demand during the week)
+
+-   Electric bike, a very in demand product for short distance in center of Chicago for both type of users.
+
+## Conclusions and recommendations:
+
+To convert casual users to membership users the bellow action will be of great value:
+
+1.  Promoting docked bikes with membership cards for casual users with discounts and special offers during the weekend.
+
+2.  Promoting classic bikes for casual users with the same membership card with discounts during the week
+
+3.  Working on renewing electric bikes with higher battery capacity to scale the trip duration for this type of **Lyft** product.
+
+### Note:
+
+Let's say the pricing model is hourly. Hence, docked bikes are more likely to be profitable, and action 1 should be implemented well; alternatively, if the user is paying for the pickup, then action 3 about the electric car should be implemented well.
