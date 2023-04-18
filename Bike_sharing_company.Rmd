@@ -294,4 +294,4 @@ To convert casual users to membership users the bellow action will be of great v
 
 ### Note:
 
-Let's say the pricing model is hourly. Hence, docked bikes are more likely to be profitable, and action 1 should be implemented well; alternatively, if the user is paying for the pickup, then action 3 about the electric car should be implemented well.
+Let's say the pricing model is hourly. Hence, docked bikes are more likely to be profitable, and action 1 should be well implemented; alternatively, if the user is paying for the pickup, then action 3 about the electric car should be well implemented.
