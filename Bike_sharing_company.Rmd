@@ -204,7 +204,7 @@ Electric bikes for both of them with low time spent (mostly regular demand durin
 
 The next step is making a Geo analysis to understand where the users are and where each type of bike is used. are there any geographic preferences?
 
-Set *Google Maps API*
+Set *Google Maps API* (add your own google maps api key)
 
 ```{r echo=FALSE,results="hide"}
 api <-"***************************"
